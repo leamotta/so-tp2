@@ -5,6 +5,7 @@
 #include "Encabezado.h"
 #include "Casillero.h"
 #include "Enviar_recibir.h"
+#include "../locks/RWLock.h"
 
 using namespace std;
 bool cargar_int(const char* numero, unsigned int& n);
