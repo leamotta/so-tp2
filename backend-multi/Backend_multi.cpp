@@ -10,6 +10,8 @@ vector<vector<char> > tablero_temporal; // tiene cartas que aún no están confi
 vector<vector<char> > tablero_confirmado; // solamente tiene las cartas confirmadas
 unsigned int ancho = -1;
 unsigned int alto = -1;
+List<array<char, 21> > nombre_jugadores;    // lista con nombres de jugadores
+RWLock RW_Gral; //Maneja lockeos de variables generales.
 
 
 bool cargar_int(const char* numero, unsigned int& n) {
@@ -80,17 +82,26 @@ int main(int argc, const char* argv[]) {
         return 1;
     }
 
+    std::vector<pthread_t> cola_jugadores;
+
     // aceptar conexiones entrantes.
     socket_size = sizeof(remoto);
     while (true) {
         if ((socketfd_cliente = accept(socket_servidor, (struct sockaddr*) &remoto, (socklen_t*) &socket_size)) == -1)
             cerr << "Error al aceptar conexion" << endl;
         else {
-            close(socket_servidor);
-            atendedor_de_jugador(socketfd_cliente);
+            pthread_t *tid = (pthread_t *) malloc(sizeof(pthread_t));   
+
+            cola_jugadores.push_back(*tid);
+            pthread_create(tid, NULL, atendedor_de_jugador, &socketfd_cliente) ; //Abrimos un trhead para cada jugador.
         }
     }
 
+    for (int i = 0; i < (int) cola_jugadores.size(); ++i)
+    {
+        pthread_join(cola_jugadores[i], NULL);
+    }
+    close(socket_servidor);
 
     return 0;
 }
@@ -105,6 +116,29 @@ void atendedor_de_jugador(int socket_fd) {
         // el cliente cortó la comunicación, o hubo un error. Cerramos todo.
         terminar_servidor_de_jugador(socket_fd, jugada_actual);
     }
+
+    RW_Gral.wlock();    //lock para guardar el nombre del jugador
+
+    // TODO: Chequear si el nombre del jugador es valido.
+    if (strlen(nombre_jugador) > 0)
+    {
+        nombre_jugadores.push_back(nombre_jugador);     // TODO: tenemos que guardar el nombre de cada jugador?
+
+    }else { // si no hay nombre tiramos error
+        cout << "No es un nombre de jugador válido" << endl;
+
+        RW_Gral.wunlock(); //Unlock escritura 
+
+        if (enviar_error(socket_fd) != 0){
+             //se produjo error al enviar. Cerramos todo.
+             terminar_servidor_de_jugador(socket_fd, jugada_actual);
+        }
+
+        int error = -1;
+        pthread_exit(&error);
+    }
+
+    RW_Gral.wunlock(); // unlock escritura 
 
     if (enviar_dimensiones(socket_fd) != 0) {
         // se produjo un error al enviar. Cerramos todo.
