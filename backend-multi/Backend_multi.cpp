@@ -116,8 +116,11 @@ int main(int argc, const char* argv[]) {
 }
 
 
-void atendedor_de_jugador(int socket_fd) {
+void atendedor_de_jugador(void *data) {
     // variables locales del jugador
+    int *puntero = (int *) data;
+    int socket_fd = *puntero;
+    
     char nombre_jugador[21];
     list<Casillero> jugada_actual; // lista de cartas aún no confirmadas del jugador
 
