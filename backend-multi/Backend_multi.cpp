@@ -348,7 +348,8 @@ void terminar_servidor_de_jugador(int socket_fd, list<Casillero>& jugada_actual)
 
     quitar_cartas(jugada_actual);
 
-    exit(-1);
+    pthread_exit(NULL);
+
 }
 
 
