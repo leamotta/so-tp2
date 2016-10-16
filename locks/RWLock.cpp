@@ -4,9 +4,9 @@ RWLock :: RWLock() {
     reading = 0;
     writing = 0;
     writers = 0;
-    pthread_mutex_init(&m, NULL);
+    pthread_mutex_init(&m, 0);
 	pthread_mutex_init(&readMutex, 0);
-	pthread_cond_init(&turn, NULL);
+	pthread_cond_init(&turn, 0);
 }
 
 void RWLock :: rlock() {
