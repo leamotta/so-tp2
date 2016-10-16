@@ -50,12 +50,11 @@ void* write(void *data)
 void deadlock(){
 	pthread_t thread[100];
 	int threadIds[100];
-	for (int i = 0; i < 100; i++) {
-		threadIds[i] = i;
-	}
+
 	//threads alternados entre read y write
 	for(int i=0; i<100; i++){
-		if(i % 3 == 0){
+		threadIds[i] = i;
+		if(i % 2 == 0){
 			pthread_create(&thread[i],NULL,write,&threadIds[i]);
 		}else{
 			pthread_create(&thread[i],NULL,read,&threadIds[i]);
@@ -74,7 +73,7 @@ void starvation(){
 	for (int i=0; i < 100; i++) 
 	{
 		threadIds[i] = i;
-		if (i % 10 == 0){
+		if (i % 20 == 0){
 			pthread_create(&threads[i], NULL, write, &threadIds[i]);
 		}else{
 			pthread_create(&threads[i], NULL, read, &threadIds[i]);

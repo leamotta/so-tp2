@@ -4,52 +4,48 @@ RWLock :: RWLock() {
     reading = 0;
     writing = 0;
     writers = 0;
+    pthread_mutex_init(&m, NULL);
+	pthread_mutex_init(&readMutex, 0);
+	pthread_cond_init(&turn, NULL);
 }
 
 void RWLock :: rlock() {
-    while(1) {
-        pthread_cond_wait(&turn, &m);
-        if (writing <= 0 && writers <=0) {
-            reading++;
-            pthread_cond_signal(&turn);
-            break;
-        }
-        pthread_cond_signal(&turn);
-        pthread_cond_wait(&read_cond, &m_r);
+    pthread_mutex_lock(&readMutex);
+    pthread_mutex_lock(&m);
+    while(writing){
+		pthread_cond_wait(&turn, &m);
     }
+    reading++;
+    pthread_mutex_unlock(&m);
+    pthread_mutex_unlock(&readMutex);
+
 }
 
 void RWLock :: wlock() {
-    while(1) {
-        pthread_cond_wait(&turn, &m);
-        writers++;
-        if (reading <= 0 && writing <=0) {
-            writing++;
-            writers--;
-            pthread_cond_signal(&turn);
-            break;
-        }
-        pthread_cond_signal(&turn);
-        pthread_cond_wait(&write_cond, &m_w);
+	pthread_mutex_lock(&readMutex);
+	pthread_mutex_lock(&m);
+    writers++;
+    while(writing || reading){
+		pthread_cond_wait(&turn, &m);
     }
+    writing++;
+    pthread_mutex_unlock(&m);
 }
 
 void RWLock :: runlock() {
-    pthread_cond_wait(&turn, &m);
+    pthread_mutex_lock(&m);
     reading--;
-    pthread_cond_signal(&turn);
-    pthread_cond_signal(&write_cond);
+    if(reading == 0){
+		pthread_cond_broadcast(&turn);
+    }
+	pthread_mutex_unlock(&m);
 }
 
 void RWLock :: wunlock() {
-    pthread_cond_wait(&turn, &m);
+	pthread_mutex_unlock(&readMutex);
+    pthread_mutex_lock(&m);
     writing--;
-    if (writers > 0) {
-        // Libero otro writer
-        pthread_cond_signal(&write_cond);
-    } else {
-        // Libero reading
-        pthread_cond_signal(&read_cond);
-    }
-    pthread_cond_signal(&turn);
+    writers--;
+    pthread_cond_broadcast(&turn);
+    pthread_mutex_unlock(&m);
 }

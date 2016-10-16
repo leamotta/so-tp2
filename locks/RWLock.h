@@ -14,13 +14,7 @@ class RWLock {
     private:
         pthread_mutex_t m;
         pthread_cond_t  turn;   /* Event: someone else's turn */
-
-        pthread_mutex_t m_r;
-        pthread_cond_t  read_cond;   
-
-        pthread_mutex_t m_w;
-        pthread_cond_t  write_cond;   
-
+        pthread_mutex_t readMutex;
         int reading;
         int writing;
         int writers;
