@@ -12,7 +12,7 @@ RWLock :: RWLock() {
 void RWLock :: rlock() {
     pthread_mutex_lock(&readMutex);
     pthread_mutex_lock(&m);
-    while(writing){
+    while(writing){//si hay alguien escribiendo, espero
 		pthread_cond_wait(&turn, &m);
     }
     reading++;
@@ -25,7 +25,7 @@ void RWLock :: wlock() {
 	pthread_mutex_lock(&readMutex);
 	pthread_mutex_lock(&m);
     writers++;
-    while(writing || reading){
+    while(writing || reading){//si hay alguien escribiendo o leyendo, espero
 		pthread_cond_wait(&turn, &m);
     }
     writing++;
@@ -35,7 +35,7 @@ void RWLock :: wlock() {
 void RWLock :: runlock() {
     pthread_mutex_lock(&m);
     reading--;
-    if(reading == 0){
+    if(reading == 0){//si terminaron todos de leer, aviso para que otros threads puedan continuar
 		pthread_cond_broadcast(&turn);
     }
 	pthread_mutex_unlock(&m);
@@ -46,6 +46,6 @@ void RWLock :: wunlock() {
     pthread_mutex_lock(&m);
     writing--;
     writers--;
-    pthread_cond_broadcast(&turn);
+    pthread_cond_broadcast(&turn);//aviso para que todos puedan continuar
     pthread_mutex_unlock(&m);
 }
