@@ -10,7 +10,6 @@ vector<vector<char> > tablero_temporal; // tiene cartas que aún no están confi
 vector<vector<char> > tablero_confirmado; // solamente tiene las cartas confirmadas
 unsigned int ancho = -1;
 unsigned int alto = -1;
-//List<array<char, 21> > nombre_jugadores;    // lista con nombres de jugadores
 RWLock RW_Gral; //Maneja lockeos de variables generales.
 RWLock RW_Temporal; // Lock para el tablero del jugador actual
 RWLock RW_Confirmado; // Lock para el tablero general
@@ -131,13 +130,7 @@ void* atendedor_de_jugador(void *data) {
 
     RW_Gral.wlock();    //lock para guardar el nombre del jugador
 
-    // TODO: Chequear si el nombre del jugador es valido.
-    if (strlen(nombre_jugador) > 0)
-    {
-
-        //nombre_jugadores.push_back(nombre_jugador);     // TODO: tenemos que guardar el nombre de cada jugador?
-
-    }else { // si no hay nombre tiramos error
+    if (strlen(nombre_jugador) == 0){ // si no hay nombre tiramos error
         cout << "No es un nombre de jugador válido" << endl;
 
         RW_Gral.wunlock(); //Unlock escritura 
@@ -159,9 +152,6 @@ void* atendedor_de_jugador(void *data) {
     }
 
     cout << "Esperando que juegue " << nombre_jugador << endl;
-
-    //bool VC_jugador = true;
-    //bool VC_general = true;
 
     while (true) {
 
