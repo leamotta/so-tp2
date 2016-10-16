@@ -116,7 +116,7 @@ int main(int argc, const char* argv[]) {
 }
 
 
-void atendedor_de_jugador(void *data) {
+void* atendedor_de_jugador(void *data) {
     // variables locales del jugador
     int *puntero = (int *) data;
     int socket_fd = *puntero;
