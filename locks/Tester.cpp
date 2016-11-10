@@ -6,18 +6,27 @@ using std::cout;
 
 RWLock myLock;
 
+int contadorCompartido;
+
 void* read(void *data);
 void* write(void *data);
-void deadlock();
-void starvation();
+bool raceCondition();
+bool starvation();
 
 int main(int argc, char* argv[]) {
-	cout << "Start Deadlock Test:\n";
-	deadlock();
-	cout << "Deadlock Test Finished\n";
+	cout << "Start Race Condition Test:\n";
+	if(raceCondition()){
+		cout << "Race Condition Test Success\n";
+	}else{
+		cout << "Race Condition Test Failed\n";	
+	}
+
 	cout << "Start Starvation Test:\n";
-	starvation();
-	cout << "Starvation Test Finished\n";
+	if(starvation()){
+		cout << "Starvation Test Success\n";
+	}else{
+		cout << "Starvation Test Failed\n";
+	}
 	return 0;
 }
 
@@ -29,7 +38,7 @@ void* read(void *data)
 	myLock.rlock();
 	printf("Thread %02d start read\n", id);
 	sleep(1);
-	printf("Thread %02d finish read\n", id);
+	printf("Thread %02d finish read. Contador:%d\n", id,contadorCompartido);
 	myLock.runlock();
 	pthread_exit(0);
 }
@@ -40,14 +49,16 @@ void* write(void *data)
 	sleep(1);
 	printf("Thread %02d req write\n", id);
 	myLock.wlock();
-	printf("Thread %02d start write\n", id);
+	printf("Thread %02d start write. Contador:%d\n", id,contadorCompartido);
 	sleep(1);
-	printf("Thread %02d finish write\n", id);
+	contadorCompartido++;
+	printf("Thread %02d finish write. Contador:%d\n", id,contadorCompartido);
 	myLock.wunlock();
 	pthread_exit(0);
 }
 
-void deadlock(){
+bool raceCondition(){
+	contadorCompartido = 0;
 	pthread_t thread[100];
 	int threadIds[100];
 
@@ -64,9 +75,18 @@ void deadlock(){
 	for(int i=0; i<100; i++){
 		pthread_join(thread[i],NULL);
 	}
+
+	/*
+	Si'hay una race condition entre 2 writes, el contador tendría que ser menor a 50,
+	ya que si corren simultaneamente la lectura, el incremento del valor y el write-back,
+	puede que los writes incrementen el valor al mismo tiempo, sin esperar a que el otro termine
+	y finalmente se pierda al menos un incremento de valor
+	*/
+	return contadorCompartido == 50;
 }
 
-void starvation(){
+bool starvation(){
+	contadorCompartido = 0;
 	pthread_t threads[100];
 	int threadIds[100];
 
@@ -83,4 +103,11 @@ void starvation(){
 	for (int i=0; i < 100; i++){
 		pthread_join(threads[i], NULL);
 	}
+
+	/*
+	En este test, además de ver que no hay starvation, vemos claramente como hay múltiples lecturas
+	concurrentes entre los pocos writes. Se puede ver que solo son frenadas por la aparición de writes, 
+	que necesitan exclusividad en el manejo de la variable
+	*/
+	return contadorCompartido == 5;
 }
