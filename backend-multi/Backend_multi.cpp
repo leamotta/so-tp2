@@ -104,11 +104,6 @@ int main(int argc, const char* argv[]) {
         }
     }
 
-    for (int i = 0; i < (int) cola_jugadores.size(); ++i)
-    {
-        pthread_join(cola_jugadores[i], NULL);
-    }
-
     close(socket_servidor);
 
     return 0;
