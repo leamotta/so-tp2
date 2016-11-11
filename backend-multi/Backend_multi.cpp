@@ -128,8 +128,6 @@ void* atendedor_de_jugador(void *data) {
         terminar_servidor_de_jugador(socket_fd, jugada_actual);
     }
 
-    RW_Gral.wlock();    //lock para guardar el nombre del jugador
-
     if (strlen(nombre_jugador) == 0){ // si no hay nombre tiramos error
         cout << "No es un nombre de jugador válido" << endl;
 
@@ -143,8 +141,6 @@ void* atendedor_de_jugador(void *data) {
         int error = -1;
         pthread_exit(&error);
     }
-
-    RW_Gral.wunlock(); // unlock escritura 
 
     if (enviar_dimensiones(socket_fd) != 0) {
         // se produjo un error al enviar. Cerramos todo.
