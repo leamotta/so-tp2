@@ -166,9 +166,12 @@ void* atendedor_de_jugador(void *data) {
 
             // ficha contiene la nueva carta a colocar
             // verificar si es una posición válida del tablero
+
+            // Tomamos el lock antes de saber si podemos escribir, para evitar que 
+            // cambie la condicion de ficha_valida entre que la verificamos y que escribimos
+            RW_Temporal.wlock();
             if (es_ficha_valida_en_jugada(ficha, jugada_actual)) {
                 jugada_actual.push_back(ficha);
-                RW_Temporal.wlock();
                 tablero_temporal[ficha.fila][ficha.columna] = ficha.contenido;
                 RW_Temporal.wunlock();
 
@@ -179,6 +182,7 @@ void* atendedor_de_jugador(void *data) {
                 }
             }
             else {
+                RW_Temporal.wunlock(); // ya no necesitamos el lock
                 quitar_cartas(jugada_actual);
                 // ERROR
                 if (enviar_error(socket_fd) != 0) {
