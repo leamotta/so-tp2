@@ -10,7 +10,7 @@ vector<vector<char> > tablero_temporal; // tiene cartas que aún no están confi
 vector<vector<char> > tablero_confirmado; // solamente tiene las cartas confirmadas
 unsigned int ancho = -1;
 unsigned int alto = -1;
-RWLock RW_Gral; //Maneja lockeos de variables generales.
+RWLock RW_SocketFd; // Lock para socketfd_cliente
 RWLock RW_Temporal; // Lock para el tablero del jugador actual
 RWLock RW_Confirmado; // Lock para el tablero general
 
@@ -30,7 +30,7 @@ int main(int argc, const char* argv[]) {
 
     RW_Confirmado = RWLock(); 
     RW_Temporal = RWLock();
-    RW_Gral = RWLock();
+    RW_SocketFd = RWLock();
 
     // manejo la señal SIGINT para poder cerrar el socket cuando cierra el programa
     signal(SIGINT, cerrar_servidor);
@@ -94,6 +94,7 @@ int main(int argc, const char* argv[]) {
     // aceptar conexiones entrantes.
     socket_size = sizeof(remoto);
     while (true) {
+        RW_SocketFd.wlock();
         if ((socketfd_cliente = accept(socket_servidor, (struct sockaddr*) &remoto, (socklen_t*) &socket_size)) == -1)
             cerr << "Error al aceptar conexion" << endl;
         else {
@@ -102,6 +103,7 @@ int main(int argc, const char* argv[]) {
             cola_jugadores.push_back(*tid);
             pthread_create(tid, NULL, atendedor_de_jugador, &socketfd_cliente) ; //Abrimos un trhead para cada jugador.
         }
+        RW_SocketFd.wunlock();
     }
 
     close(socket_servidor);
@@ -125,8 +127,6 @@ void* atendedor_de_jugador(void *data) {
 
     if (strlen(nombre_jugador) == 0){ // si no hay nombre tiramos error
         cout << "No es un nombre de jugador válido" << endl;
-
-        RW_Gral.wunlock(); //Unlock escritura 
 
         if (enviar_error(socket_fd) != 0){
              //se produjo error al enviar. Cerramos todo.
