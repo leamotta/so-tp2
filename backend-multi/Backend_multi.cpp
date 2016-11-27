@@ -13,7 +13,6 @@ unsigned int alto = -1;
 RWLock RW_SocketFd; // Lock para socketfd_cliente
 RWLock RW_Temporal; // Lock para el tablero del jugador actual
 RWLock RW_Confirmado; // Lock para el tablero general
-RWLock RW_Ficha; // Lock para jugar ficha
 
 
 
@@ -32,7 +31,6 @@ int main(int argc, const char* argv[]) {
     RW_Confirmado = RWLock(); 
     RW_Temporal = RWLock();
     RW_SocketFd = RWLock();
-    RW_Ficha = RWLock();
 
     // manejo la señal SIGINT para poder cerrar el socket cuando cierra el programa
     signal(SIGINT, cerrar_servidor);
@@ -166,11 +164,11 @@ void* atendedor_de_jugador(void *data) {
 
             // Tomamos el lock antes de saber si podemos escribir, para evitar que 
             // cambie la condicion de ficha_valida entre que la verificamos y que escribimos
-            RW_Ficha.wlock();
+            RW_Temporal.wlock();
             if (es_ficha_valida_en_jugada(ficha, jugada_actual)) {
                 jugada_actual.push_back(ficha);
                 tablero_temporal[ficha.fila][ficha.columna] = ficha.contenido;
-                RW_Ficha.wunlock();
+                RW_Temporal.wunlock();
 
                 // OK
                 if (enviar_ok(socket_fd) != 0) {
@@ -179,7 +177,7 @@ void* atendedor_de_jugador(void *data) {
                 }
             }
             else {
-                RW_Ficha.wunlock(); // ya no necesitamos el lock
+                RW_Temporal.wunlock(); // ya no necesitamos el lock
                 quitar_cartas(jugada_actual);
                 // ERROR
                 if (enviar_error(socket_fd) != 0) {
@@ -360,12 +358,9 @@ bool es_ficha_valida_en_jugada(const Casillero& ficha, const list<Casillero>& ju
     }
 
     // si el casillero está ocupado, tampoco es válida
-    RW_Temporal.rlock();
     if (tablero_temporal[ficha.fila][ficha.columna] != VACIO) {
-        RW_Temporal.runlock();
         return false;
     }
-    RW_Temporal.runlock();
 
     if (jugada_actual.size() > 0) {
 
