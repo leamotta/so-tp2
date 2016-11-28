@@ -63,7 +63,7 @@ int main(int argc, const char* argv[]) {
         tablero_confirmado[i] = vector<char>(ancho, VACIO);
     }
 
-    int socketfd_cliente, socket_size;
+    int socket_size;
     struct sockaddr_in local, remoto;
 
     // crear un socket de tipo INET con TCP (SOCK_STREAM)
@@ -89,21 +89,19 @@ int main(int argc, const char* argv[]) {
         return 1;
     }
 
-    std::vector<pthread_t> cola_jugadores;
-
     // aceptar conexiones entrantes.
     socket_size = sizeof(remoto);
     while (true) {
-        RW_SocketFd.wlock();
-        if ((socketfd_cliente = accept(socket_servidor, (struct sockaddr*) &remoto, (socklen_t*) &socket_size)) == -1)
+        int *socketfd_cliente = (int *) malloc(sizeof(int));   
+        *socketfd_cliente = accept(socket_servidor, (struct sockaddr*) &remoto, (socklen_t*) &socket_size);
+
+        if (*socketfd_cliente == -1)
             cerr << "Error al aceptar conexion" << endl;
         else {
             pthread_t *tid = (pthread_t *) malloc(sizeof(pthread_t));   
 
-            cola_jugadores.push_back(*tid);
-            pthread_create(tid, NULL, atendedor_de_jugador, &socketfd_cliente) ; //Abrimos un trhead para cada jugador.
+            pthread_create(tid, NULL, atendedor_de_jugador, socketfd_cliente) ; //Abrimos un thread para cada jugador.
         }
-        RW_SocketFd.wunlock();
     }
 
     close(socket_servidor);
